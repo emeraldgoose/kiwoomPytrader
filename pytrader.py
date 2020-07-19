@@ -42,9 +42,6 @@ class MyWindow(QMainWindow, form_class):
         # display buy & sell list
         self.load_buy_sell_list()
 
-        # 일봉차트
-        self.pushButton_3.clicked.connect(self.getCandleData)
-
     def timeout(self):
         market_start_time = QTime(9, 0, 0)
         current_time = QTime.currentTime()
@@ -224,42 +221,6 @@ class MyWindow(QMainWindow, form_class):
         for row_data in sell_list:
             f.write(row_data)
         f.close()
-
-    def getCandleData(self):
-        print('run getCandleData')
-        self.kiwoom.ohlcv = {'date': [], 'open': [], 'high': [], 'low': [], 'close': [], 'volume': []}
-        stockCode = self.lineEdit.text()
-        print('stock ' + stockCode)
-        self.kiwoom.set_input_value("종목코드", stockCode)
-        daynow = datetime.now()
-        daynow1 = daynow.year
-        daynow2 = daynow.month
-        if daynow2 < 10:
-            daynow2 = "0%s" % daynow2
-        daynow3 = daynow.day
-        if daynow3 < 10:
-            daynow3 = "0%s" % daynow3
-        daynow4 = "%s%s%s" % (daynow1, daynow2, daynow3)
-        print('day calc complete')
-        # opt100081 TR request
-        self.kiwoom.set_input_value("종목코드", stockCode)
-        self.kiwoom.set_input_value("기준일자", daynow4)
-        self.kiwoom.set_input_value("수정주가구분", 1)
-        self.kiwoom.comm_rq_data("opt10081_req", "opt10081", 0, "0101")
-        print('get first candledata')
-        while self.kiwoom.remained_data == True:
-            time.sleep(0.2)
-            self.kiwoom.set_input_value("종목코드", stockCode)
-            self.kiwoom.set_input_value("기준일자", daynow4)
-            self.kiwoom.set_input_value("수정주가구분", 1)
-            self.kiwoom.comm_rq_data("opt10081_req","opt10081",2,"0101")
-        print('get remained data')
-        df = pd.DataFrame(self.kiwoom.ohlcv,
-                          columns=['open', 'high', 'low', 'close', 'volume'], index=self.kiwoom.ohlcv['date'])
-        print('save df')
-        con = sqlite3.connect("C:/Users/smk62/Documents/Pycharm/kiwoomPytrader/candleData/005930.db")
-        print('connect sqlite')
-        df.to_sql('005930', con, if_exists='replace')
 
 
 if __name__ == "__main__":

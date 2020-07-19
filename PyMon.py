@@ -2,8 +2,11 @@ import sys
 from PyQt5.QtWidgets import *
 from kiwoomPytrader import Kiwoom
 import time
-from pandas import DataFrame
+import pandas as pd
 import datetime
+from datetime import *
+import sqlite3
+import time
 
 MARKET_KOSPI   = 0
 MARKET_KOSDAQ  = 10
@@ -28,7 +31,7 @@ class PyMon:
         self.kiwoom.comm_rq_data("opt10081_req", "opt10081", 0, "0101")
         time.sleep(0.5)
 
-        df = DataFrame(self.kiwoom.ohlcv, columns=['open', 'high', 'low', 'close', 'volume'],
+        df = pd.DataFrame(self.kiwoom.ohlcv, columns=['open', 'high', 'low', 'close', 'volume'],
                        index=self.kiwoom.ohlcv['date'])
         return df
 
@@ -61,20 +64,61 @@ class PyMon:
             f.writelines("매수;", code, ";시장가;10;0;매수전\n")
         f.close()
 
+    def getCandleData(self, stockCode):
+        self.kiwoom.ohlcv = {'date': [], 'open': [], 'high': [], 'low': [], 'close': [], 'volume': []}
+        self.kiwoom.set_input_value("종목코드", stockCode)
+        # 날짜 계산
+        daynow = datetime.now()
+        daynow1 = daynow.year
+        daynow2 = daynow.month
+        if daynow2 < 10:
+            daynow2 = "0%s" % daynow2
+        daynow3 = daynow.day
+        if daynow3 < 10:
+            daynow3 = "0%s" % daynow3
+        daynow4 = "%s%s%s" % (daynow1, daynow2, daynow3)
+
+        # opt100081 TR request
+        self.kiwoom.set_input_value("종목코드", stockCode)
+        self.kiwoom.set_input_value("기준일자", daynow4)
+        self.kiwoom.set_input_value("수정주가구분", 1)
+        self.kiwoom.comm_rq_data("opt10081_req", "opt10081", 0, "0101")
+        while self.kiwoom.remained_data == True:
+            time.sleep(0.2)
+            self.kiwoom.set_input_value("종목코드", stockCode)
+            self.kiwoom.set_input_value("기준일자", daynow4)
+            self.kiwoom.set_input_value("수정주가구분", 1)
+            self.kiwoom.comm_rq_data("opt10081_req","opt10081",2,"0101")
+        # DB 저장
+        df = pd.DataFrame(self.kiwoom.ohlcv,
+                          columns=['open', 'high', 'low', 'close', 'volume'], index=self.kiwoom.ohlcv['date'])
+        con = sqlite3.connect("C:/Users/smk62/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
+        df.to_sql(stockCode, con, if_exists='replace')
+
     def run(self):
-        buy_list = []
-        num = len(self.kosdaq_codes)
+        # buy_list = []
+        num = len(self.kospi_codes)
+        codes = self.kospi_codes
+        cnt = 0
+        for code in codes:
+            print(cnt, "/", num)
+            print("code : ", code)
+            self.getCandleData(code)
+            time.sleep(3.6)
+            cnt = cnt+1
 
-        for i, code in enumerate(self.kosdaq_codes):
-            if i == 499:
-                time.sleep(10)
-            elif i == 999:
-                time.sleep(10)
-            print(i, '/', num)
-            if self.check_speedy_rising_volume(code):
-                buy_list.append(code)
+        print('end')
+        # for i, code in enumerate(self.kosdaq_codes):
+        #     if i == 499:
+        #         time.sleep(10)
+        #     elif i == 999:
+        #         time.sleep(10)
+        #     print(i, '/', num)
+        #     if self.check_speedy_rising_volume(code):
+        #         buy_list.append(code)
 
-        self.update_buy_list(buy_list)
+        # self.update_buy_list(buy_list)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

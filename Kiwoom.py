@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
+import datetime
 import time
 
 TR_REQ_TIME_INTERVAL = 0.2
@@ -18,6 +19,7 @@ class Kiwoom(QAxWidget):
     def _set_signal_slots(self):
         self.OnEventConnect.connect(self._event_connect)
         self.OnReceiveTrData.connect(self._receive_tr_data)
+        self.OnReceiveRealData.connect(self._receive_real_data)
         self.OnReceiveChejanData.connect(self._receive_chejan_data)
 
     def comm_connect(self):
@@ -72,9 +74,11 @@ class Kiwoom(QAxWidget):
         if rqname == "opt10081_req":
             self._opt10081(rqname, trcode)
         elif rqname == "opw00001_req":
-            self._opw00001(rqname,trcode)
+            self._opw00001(rqname, trcode)
         elif rqname == "opw00018_req":
             self._opw00018(rqname, trcode)
+        elif rqname == "opt10001_req":
+            self._opt10001(rqname, trcode)
 
         try:
             self.tr_event_loop.exit()
@@ -112,6 +116,16 @@ class Kiwoom(QAxWidget):
         print(self.get_chejan_data(302))    # 종목명
         print(self.get_chejan_data(900))    # 주문수량
         print(self.get_chejan_data(901))    # 주문가격
+
+    def _receive_real_data(self, stockCode, realType, realData):
+        print(stockCode)
+        print(realType)
+        print(realData)
+
+        try:
+            self.tr_event_loop.exit()
+        except AttributeError:
+            pass
 
     def get_login_info(self, tag):
         ret=self.dynamicCall("GetLoginInfo(QString)", tag)
@@ -171,6 +185,32 @@ class Kiwoom(QAxWidget):
     def get_server_gubun(self):
         ret = self.dynamicCall("KOA_Functions(QString, QString", "GetServerGubun", "")
         return ret
+
+    # opt10001 실시간 주식 체결 정보 수신
+    def _opt10001(self, rqname, trcode):
+        now = datetime.datetime.now()
+        print(now)
+        date = now.strftime('%Y-%m-%d %H:$M:%S')
+        tmp = self._get_comm_data(trcode, rqname, 0, "현재가")
+        tmp2 = int(float(tmp))
+        close = abs(tmp2)
+        print(close)
+        return
+
+    def _get_comm_data(self, code, recodeName, index, itemName):
+        ret = self.dynamicCall("GetCommData(QString, QString, int, QString)", code, recodeName, index, itemName)
+        print(ret)
+        return ret.strip()
+
+    def SetRealData(self, screenNo, stockCode, fid, realType):
+        Trial = self.dynamicCall("SetRealReg(QString, QString, QString, QString", screenNo, stockCode, fid, realType)
+        print(Trial + "results")
+        return
+
+    def SetRealRemove(self, screenNo, stockCode):
+        Trial = self.dynamicCall("SetRealRemove(QString, QString)", screenNo, stockCode)
+        print(Trial + "disconnect")
+        return
 
     @staticmethod
     def change_format(data):

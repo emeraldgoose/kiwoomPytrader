@@ -19,7 +19,7 @@ class PyMon:
 
     def get_code_list(self):
         self.kospi_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSPI)
-        self.kosdaq_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSDAQ)
+        #self.kosdaq_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSDAQ)
 
 
     def get_ohlcv(self, code, start):
@@ -32,7 +32,13 @@ class PyMon:
         time.sleep(0.5)
 
         df = pd.DataFrame(self.kiwoom.ohlcv, columns=['open', 'high', 'low', 'close', 'volume'],
-                       index=self.kiwoom.ohlcv['date'])
+                       index = self.kiwoom.ohlcv['date'])
+        # 1000원 미만 주식 제외
+        global skipStock;
+        if df.iloc[0]['close'] < 1000:
+            skipStock=1;
+        else:
+            skipStock=0;
         return df
 
     def check_speedy_rising_volume(self, code):
@@ -89,23 +95,33 @@ class PyMon:
             self.kiwoom.set_input_value("기준일자", daynow4)
             self.kiwoom.set_input_value("수정주가구분", 1)
             self.kiwoom.comm_rq_data("opt10081_req","opt10081",2,"0101")
+
         # DB 저장
         df = pd.DataFrame(self.kiwoom.ohlcv,
                           columns=['open', 'high', 'low', 'close', 'volume'], index=self.kiwoom.ohlcv['date'])
         con = sqlite3.connect("C:/Users/smk62/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
         df.to_sql(stockCode, con, if_exists='replace')
 
+    def getRealData(self, stockCode):
+        self.kiwoom.set_input_value("종목코드", stockCode)
+        self.kiwoom.comm_rq_data("opt10001_req","opt10001",0,"0101")
+
+
     def run(self):
         # buy_list = []
-        num = len(self.kospi_codes)
-        codes = self.kospi_codes
-        cnt = 0
-        for code in codes:
-            print(cnt, "/", num)
-            print("code : ", code)
-            self.getCandleData(code)
-            time.sleep(3.6)
-            cnt = cnt+1
+        # num = len(self.kospi_codes)
+        # codes = self.kospi_codes
+        # cnt = 0
+        # for code in codes:
+        #     print(cnt, "/", num)
+        #     print("code : ", code)
+        #     df = self.get_ohlcv(code, datetime.now())
+        #     if skipStock == 1:
+        #         continue
+        #     con = sqlite3.connect("C:/Users/smk62/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
+        #     df.to_sql(code, con, if_exists='replace')
+        #     time.sleep(3.6)
+        #     cnt = cnt+1
 
         print('end')
         # for i, code in enumerate(self.kosdaq_codes):

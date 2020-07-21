@@ -11,6 +11,7 @@ class MyWindow(QMainWindow, form_class):
         super().__init__()
         self.setupUi(self)
 
+        # 모의투자
         self.trade_stocks_done = False
 
         # Login
@@ -34,13 +35,16 @@ class MyWindow(QMainWindow, form_class):
         # 조회버튼
         self.pushButton_2.clicked.connect(self.check_balance)
 
-        # Timer2 (10 second timer)
+        # Timer2 (10 seconds timer)
         self.timer2 = QTimer(self)
         self.timer2.start(1000*10)
         self.timer2.timeout.connect(self.timeout2)
 
         # display buy & sell list
         self.load_buy_sell_list()
+
+        # get Real data
+        self.pushButton_3.clicked.connect(self.getRealData)
 
     def timeout(self):
         market_start_time = QTime(9, 0, 0)
@@ -221,6 +225,11 @@ class MyWindow(QMainWindow, form_class):
         for row_data in sell_list:
             f.write(row_data)
         f.close()
+
+    def getRealData(self):
+        stockCode = self.lineEdit.text()
+        self.kiwoom.set_input_value("종목코드", stockCode)
+        self.kiwoom.comm_rq_data("opt10001_req","opt10001",0,"2001")
 
 
 if __name__ == "__main__":

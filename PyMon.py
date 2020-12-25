@@ -99,7 +99,7 @@ class PyMon:
         # DB 저장
         df = pd.DataFrame(self.kiwoom.ohlcv,
                           columns=['open', 'high', 'low', 'close', 'volume'], index=self.kiwoom.ohlcv['date'])
-        con = sqlite3.connect("C:/Users/smk62/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
+        con = sqlite3.connect("C:/Users/***/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
         df.to_sql(stockCode, con, if_exists='replace')
 
     def getRealData(self, stockCode):
@@ -118,7 +118,7 @@ class PyMon:
         #     df = self.get_ohlcv(code, datetime.now())
         #     if skipStock == 1:
         #         continue
-        #     con = sqlite3.connect("C:/Users/smk62/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
+        #     con = sqlite3.connect("C:/Users/***/Documents/Pycharm/kiwoomPytrader/candleData/stock.db")
         #     df.to_sql(code, con, if_exists='replace')
         #     time.sleep(3.6)
         #     cnt = cnt+1
